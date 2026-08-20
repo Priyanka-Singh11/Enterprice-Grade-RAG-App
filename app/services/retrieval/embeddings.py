@@ -4,7 +4,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from app.config import settings
 
 BATCH_SIZE = 50
-_GEMINI_DIM = 3072
+_GEMINI_DIM = 3072#this is the dimension of the gemini-embedding-2-preview model
 _FALLBACK_DIM = 768  # all-mpnet-base-v2
 
 _active_model = None
@@ -60,8 +60,9 @@ def get_embedding_dim() -> int:
 # ── Batch embedding with retry ─────────────────────────────────────────────────
 
 def _embed_batch(batch: list[str]) -> list[list[float]]:
+    '''Embed a batch of text strings using the active model.'''
     if _model_type == "gemini":
-        # Exponential backoff: 1 s → 2 s → 4 s → 8 s (4 attempts total)
+        
         for attempt in range(4):
             try:
                 return _active_model.embed_documents(batch)
@@ -69,7 +70,7 @@ def _embed_batch(batch: list[str]) -> list[list[float]]:
                 err = str(e).lower()
                 is_rate_limit = any(x in err for x in ("429", "rate", "quota", "resource_exhausted"))
                 if is_rate_limit and attempt < 3:
-                    wait = 2 ** attempt
+                    wait = 2 ** attempt # Exponential backoff: 1 s → 2 s → 4 s → 8 s (4 attempts total)sleep time 
                     logfire.warning(
                         f"Gemini rate limit hit — retrying in {wait}s "
                         f"(attempt {attempt + 1}/4)."
